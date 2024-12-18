@@ -1,0 +1,191 @@
+---
+ title: 'Исследование информации о состоянии беспроводных сетей'
+ author: "pashtet.2003@yandex.ru"
+ format: 
+   md:
+     output-file: README.md
+---
+
+## Цель работы
+
+1. Получить знания о методах исследования радиоэлектронной обстановки.
+2. Составить представление о механизмах работы Wi-Fi сетей на канальном и сетевом уровне модели OSI.
+3. Закрепить практические навыки использования языка программирования R для обработки данных.
+4. Закрепить знания основных функций обработки данных экосистемы tidyverse языка R.
+
+## Исходные данные 
+
+1. Программное обеспечение Windows 11.
+2. Rstudio Desktop и пакет dplyr.
+3. Интерпретатор языка R 4.1.
+4. Тестовые данные `P2_wifi_data.csv`.
+
+## План
+
+1. Импортировать данные.
+2. Привести датасеты в вид “аккуратных данных”, преобразовать типы столбцов в соответствии с типом данных.
+3. Просмотреть общую структуру данных с помощью функции `glimpse()` и провести анализ.
+
+## Ход выполнения работы
+
+### Импорт данных
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(readr)
+
+# Импорт данных с разными частями
+ds1 <- read_csv("P2_wifi_data.csv", n_max = 167)
+ds2 <- read_csv("P2_wifi_data.csv", skip = 169)
+```
+
+### Формирование "аккуратных данных"
+
+```{r}
+# Очистка данных и преобразование
+# Для ds1
+ds1 <- ds1 %>%
+  mutate(across(c(BSSID, Privacy, Cipher, Authentication, LAN.IP, ESSID), ~trimws(.))) %>%
+  mutate(across(c(BSSID, Privacy, Cipher, Authentication, LAN.IP, ESSID), ~na_if(., "")))
+
+ds1 <- ds1 %>%
+  mutate(
+    First.time.seen = as.POSIXct(First.time.seen, format = "%Y-%m-%d %H:%M:%S"),
+    Last.time.seen = as.POSIXct(Last.time.seen, format = "%Y-%m-%d %H:%M:%S")
+  )
+
+# Для ds2
+ds2 <- ds2 %>%
+  mutate(across(c(Station.MAC, BSSID, Probed.ESSIDs), ~trimws(.))) %>%
+  mutate(across(c(Station.MAC, BSSID, Probed.ESSIDs), ~na_if(., "")))
+
+ds2 <- ds2 %>%
+  mutate(
+    First.time.seen = as.POSIXct(First.time.seen, format = "%Y-%m-%d %H:%M:%S"),
+    Last.time.seen = as.POSIXct(Last.time.seen, format = "%Y-%m-%d %H:%M:%S")
+  )
+
+```
+
+### Просмотр общей структуры данных
+
+```{r}
+glimpse(ds1)
+glimpse(ds2)
+```
+
+## Анализ. Точки доступа.
+
+### 1. Определить небезопасные точки доступа (без шифрования – OPN)
+
+```{r}
+unsafe_points <- ds1 %>% 
+  filter(Privacy == 'OPN') %>% 
+  distinct(BSSID)
+unsafe_points
+```
+
+### 2. Определить производителя для каждого обнаруженного устройства
+
+```{r}
+# Извлечение OUI и определение производителей
+unsafe_points$Vendor <- substr(unsafe_points$BSSID, 1, 8)
+print(unique(unsafe_points$Vendor))
+```
+
+### 3. Выявить устройства, использующие протокол шифрования WPA3
+
+```{r}
+ds1 %>% 
+  filter(str_detect(Privacy, "WPA3")) %>% 
+  select(BSSID, ESSID, Privacy)
+```
+
+### 4. Отсортировать точки доступа по времени активности на связи
+
+```{r}
+ds1 %>% 
+  mutate(duration = as.numeric(difftime(Last.time.seen, First.time.seen, units = "mins"))) %>% 
+  arrange(desc(duration)) %>% 
+  select(BSSID, duration) %>% 
+  head(10)
+```
+
+### 5. Обнаружить топ-10 самых быстрых точек доступа
+
+```{r}
+ds1 %>% 
+  arrange(desc(Speed)) %>% 
+  select(BSSID, Speed) %>% 
+  head(10)
+```
+
+### 6. Частота отправки запросов (beacons)
+
+```{r}
+ds1 <- ds1 %>% 
+  mutate(beacon_rate = beacons / as.numeric(difftime(Last.time.seen, First.time.seen, units = "secs")))
+
+beacon_top10 <- ds1 %>% 
+  arrange(desc(beacon_rate)) %>% 
+  select(BSSID, beacon_rate) %>% 
+  head(10)
+beacon_top10
+```
+
+## Данные клиентов
+
+### 1. Определить производителя для каждого обнаруженного устройства
+
+```{r}
+ds2 <- ds2 %>% 
+  filter(BSSID != '(not associated)') %>% 
+  mutate(Vendor = substr(BSSID, 1, 8))
+unique(ds2$Vendor)
+```
+
+### 2. Обнаружить устройства, которые НЕ рандомизируют MAC-адрес
+
+```{r}
+norandom <- ds2 %>% 
+  filter(!str_detect(BSSID, "^02|^06|^0A|^0E")) %>% 
+  filter(BSSID != '(not associated)')
+norandom %>% select(BSSID) %>% head(10)
+```
+
+### 3. Кластеризация запросов и определение времени появления устройств
+
+```{r}
+ds2 %>% 
+  group_by(Probed.ESSIDs) %>% 
+  summarise(
+    first_seen = min(First.time.seen),
+    last_seen = max(Last.time.seen)
+  ) %>% 
+  arrange(first_seen)
+```
+
+### 4. Стабильность уровня сигнала в кластерах
+
+```{r}
+stable_clusters <- ds2 %>% 
+  filter(!is.na(Probed.ESSIDs)) %>% 
+  group_by(Probed.ESSIDs) %>% 
+  summarise(
+    mean_time = mean(as.numeric(difftime(Last.time.seen, First.time.seen, units = "secs"))),
+    sd_time = sd(as.numeric(difftime(Last.time.seen, First.time.seen, units = "secs")))
+  ) %>% 
+  filter(sd_time != 0) %>% 
+  arrange(sd_time)
+
+stable_clusters %>% head(1)
+```
+
+## Оценка результата
+
+Был проведен анализ датасета с использованием библиотек `dplyr`, `tidyverse` и `readr`. Выполнены задания, включая анализ небезопасных точек доступа, определение производителей устройств, исследование сигналов и их стабильности.
+
+## Вывод
+
+В ходе работы были получены знания о методах исследования радиоэлектронной обстановки и о механизмах работы Wi-Fi сетей на канальном и сетевом уровнях модели OSI. Закреплены практические навыки использования языка R и его экосистемы для обработки и анализа данных сетевой активности. Полученные результаты демонстрируют эффективность использования R для анализа беспроводных сетей и выявления уязвимостей в их настройке.
