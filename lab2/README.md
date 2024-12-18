@@ -1,171 +1,255 @@
-# Исследование данных с использованием пакета dplyr
+# Основы обработки данных с помощью R и Dplyr
+pashtet.2003@yandex.ru
 
 ## Цель работы
 
-1. Овладеть навыками работы с данными в R с использованием пакета **dplyr**.
-2. Закрепить работу с базовыми функциями: `select()`, `filter()`, `mutate()`, `arrange()`, `group_by()`, `summarise()`.
-3. Освоить способы анализа и преобразования табличных данных на примере встроенного датасета `starwars`.
+1.  Развить практические навыки использования языка программирования R
+    для обработки данных.
+2.  Закрепить знания базовых типов данных языка R.
+3.  Освоить функции обработки данных пакета dplyr: select(), filter(),
+    mutate(), arrange(), group_by().
 
----
+## Исходные данные
 
-## Исследование структуры датасета
+1.  Программное обеспечение: Windows 10.
+2.  RStudio Desktop и библиотека dplyr.
+3.  Интерпретатор языка R версии 4.1.
+4.  Пакет dplyr.
 
-### 1. Общая информация о данных
+## Ход работы
 
-Для начала изучим структуру датасета **starwars**:
+### 1. Установка программного пакета dplyr
 
-```{r}
-str(starwars)
+Пакет был установлен с использованием следующей команды:
+
+    install.packages("dplyr")
+
+### 2. Загрузка библиотеки
+
+Для работы с функциями dplyr библиотека была загружена:
+
+``` r
+library("dplyr")
 ```
 
-### 2. Просмотр первых строк
 
-Посмотрим на первые 6 строк таблицы:
+    Присоединяю пакет: 'dplyr'
 
-```{r}
-head(starwars)
+    Следующие объекты скрыты от 'package:stats':
+
+        filter, lag
+
+    Следующие объекты скрыты от 'package:base':
+
+        intersect, setdiff, setequal, union
+
+### 3. Сколько строк в датафрейме?
+
+Для подсчёта строк в датафрейме использовалась команда:
+
+``` r
+starwars %>% nrow()
 ```
 
----
+    [1] 87
 
-## Основные задачи
+### 4. Сколько столбцов в датафрейме?
 
-### 1. Вывод столбца с именами персонажей
+Количество столбцов:
 
-Используем функцию `pull()` для извлечения столбца с именами:
-
-```{r}
-starwars %>% pull(name)
+``` r
+starwars %>% ncol()
 ```
 
-### 2. Размер датасета
+    [1] 14
 
-Определим количество строк и столбцов в датасете:
+### 5. Как посмотреть примерный вид датафрейма?
 
-```{r}
-data_size <- list(
-  rows = nrow(starwars),
-  columns = ncol(starwars)
-)
-print(data_size)
+Использовалась функция `glimpse()` для просмотра структуры датафрейма:
+
+``` r
+starwars %>% glimpse()
 ```
 
-### 3. Уникальные виды (species)
+    Rows: 87
+    Columns: 14
+    $ name       <chr> "Luke Skywalker", "C-3PO", "R2-D2", "Darth Vader", "Leia Or…
+    $ height     <int> 172, 167, 96, 202, 150, 178, 165, 97, 183, 182, 188, 180, 2…
+    $ mass       <dbl> 77.0, 75.0, 32.0, 136.0, 49.0, 120.0, 75.0, 32.0, 84.0, 77.…
+    $ hair_color <chr> "blond", NA, NA, "none", "brown", "brown, grey", "brown", N…
+    $ skin_color <chr> "fair", "gold", "white, blue", "white", "light", "light", "…
+    $ eye_color  <chr> "blue", "yellow", "red", "yellow", "brown", "blue", "blue",…
+    $ birth_year <dbl> 19.0, 112.0, 33.0, 41.9, 19.0, 52.0, 47.0, NA, 24.0, 57.0, …
+    $ sex        <chr> "male", "none", "none", "male", "female", "male", "female",…
+    $ gender     <chr> "masculine", "masculine", "masculine", "masculine", "femini…
+    $ homeworld  <chr> "Tatooine", "Tatooine", "Naboo", "Tatooine", "Alderaan", "T…
+    $ species    <chr> "Human", "Droid", "Droid", "Human", "Human", "Human", "Huma…
+    $ films      <list> <"A New Hope", "The Empire Strikes Back", "Return of the J…
+    $ vehicles   <list> <"Snowspeeder", "Imperial Speeder Bike">, <>, <>, <>, "Imp…
+    $ starships  <list> <"X-wing", "Imperial shuttle">, <>, <>, "TIE Advanced x1",…
 
-Найдем все уникальные виды персонажей:
+### 6. Сколько уникальных рас персонажей (species) представлено в данных?
 
-```{r}
-unique_species <- starwars %>% distinct(species)
-print(unique_species)
+Для определения уникальных рас была применена следующая команда:
+
+``` r
+starwars %>% distinct(species) %>% filter(!is.na(species)) %>% nrow()
 ```
 
----
+    [1] 37
 
-## Работа с данными
+### 7. Найти самого высокого персонажа
 
-### 4. Самый тяжёлый персонаж
+Для нахождения самого высокого персонажа использовалась команда:
 
-Определим персонажа с наибольшей массой тела:
-
-```{r}
-heaviest <- starwars %>% 
-  filter(!is.na(mass)) %>%
-  arrange(desc(mass)) %>% 
-  slice(1)
-
-print(heaviest %>% select(name, mass))
+``` r
+starwars %>% filter(is.na(height) == FALSE) %>% slice_max(height) %>% select(name, height)
 ```
 
-### 5. Персонажи с ростом менее 160 см
+    # A tibble: 1 × 2
+      name        height
+      <chr>        <int>
+    1 Yarael Poof    264
 
-Отфильтруем всех персонажей ниже 160 см и выведем их данные:
+### 8. Найти всех персонажей ниже 170
 
-```{r}
-small_characters <- starwars %>%
-  filter(height < 160) %>%
-  select(name, height)
+Персонажи ниже 170:
 
-print(small_characters)
+``` r
+starwars %>% filter(height < 170) %>% select(name, height)
 ```
 
-### 6. Расчёт ИМТ (индекс массы тела)
+    # A tibble: 22 × 2
+       name                  height
+       <chr>                  <int>
+     1 C-3PO                    167
+     2 R2-D2                     96
+     3 Leia Organa              150
+     4 Beru Whitesun Lars       165
+     5 R5-D4                     97
+     6 Yoda                      66
+     7 Mon Mothma               150
+     8 Wicket Systri Warrick     88
+     9 Nien Nunb                160
+    10 Watto                    137
+    # ℹ 12 more rows
 
-Добавим новый столбец с вычисленным ИМТ и отобразим данные:
+### 9. Подсчитать ИМТ (индекс массы тела) для всех персонажей
 
-```{r}
-starwars_bmi <- starwars %>%
-  mutate(BMI = mass / (height / 100) ^ 2) %>%
-  select(name, mass, height, BMI)
+ИМТ был рассчитан по формуле:
 
-print(starwars_bmi)
+``` r
+print(starwars %>% mutate(imt = mass / (height)^2) %>% select(name, imt))
 ```
 
----
+    # A tibble: 87 × 2
+       name                   imt
+       <chr>                <dbl>
+     1 Luke Skywalker     0.00260
+     2 C-3PO              0.00269
+     3 R2-D2              0.00347
+     4 Darth Vader        0.00333
+     5 Leia Organa        0.00218
+     6 Owen Lars          0.00379
+     7 Beru Whitesun Lars 0.00275
+     8 R5-D4              0.00340
+     9 Biggs Darklighter  0.00251
+    10 Obi-Wan Kenobi     0.00232
+    # ℹ 77 more rows
 
-## Дополнительные расчёты
+### 10. Найти 10 самых “вытянутых” персонажей
 
-### 7. 10 персонажей с наибольшей плотностью массы
+Отношение массы к росту:
 
-Вычислим плотность массы (масса/рост) и найдём топ-10 персонажей:
-
-```{r}
-top_density <- starwars %>%
-  mutate(density = mass / height) %>%
-  filter(!is.na(density)) %>%
-  arrange(desc(density)) %>%
-  head(10)
-
-print(top_density %>% select(name, mass, height, density))
+``` r
+starwars %>% mutate(v = mass / height) %>% arrange(desc(v)) %>% select(name, v) %>% head(n = 10)
 ```
 
-### 8. Средний возраст персонажей по видам
+    # A tibble: 10 × 2
+       name                      v
+       <chr>                 <dbl>
+     1 Jabba Desilijic Tiure 7.76 
+     2 Grievous              0.736
+     3 IG-88                 0.7  
+     4 Owen Lars             0.674
+     5 Darth Vader           0.673
+     6 Jek Tono Porkins      0.611
+     7 Bossk                 0.595
+     8 Tarfful               0.581
+     9 Dexter Jettster       0.515
+    10 Chewbacca             0.491
 
-Добавим возраст (на основе `birth_year`) и рассчитаем средний возраст для каждого вида:
+### 11. Найти средний возраст персонажей каждой расы
 
-```{r}
-starwars_age <- starwars %>%
-  mutate(age = 2024 - birth_year) %>%
-  group_by(species) %>%
-  summarise(avg_age = mean(age, na.rm = TRUE)) %>%
-  arrange(desc(avg_age))
+Средний возраст (годы рождения):
 
-print(starwars_age)
+``` r
+starwars %>% group_by(species) %>% filter(!is.na(birth_year)) %>% summarise(mean(birth_year))
 ```
 
-### 9. Самый распространённый цвет кожи
+    # A tibble: 15 × 2
+       species        `mean(birth_year)`
+       <chr>                       <dbl>
+     1 Cerean                       92  
+     2 Droid                        53.3
+     3 Ewok                          8  
+     4 Gungan                       52  
+     5 Human                        53.7
+     6 Hutt                        600  
+     7 Kel Dor                      22  
+     8 Mirialan                     49  
+     9 Mon Calamari                 41  
+    10 Rodian                       44  
+    11 Trandoshan                   53  
+    12 Twi'lek                      48  
+    13 Wookiee                     200  
+    14 Yoda's species              896  
+    15 Zabrak                       54  
 
-Определим наиболее часто встречающийся цвет кожи:
+### 12. Найти самый распространённый цвет глаз
 
-```{r}
-popular_skin <- starwars %>%
-  group_by(skin_color) %>%
-  summarise(count = n()) %>%
-  arrange(desc(count)) %>%
-  slice(1)
+Распространённый цвет глаз:
 
-print(popular_skin)
+``` r
+starwars %>% filter(!is.na(eye_color)) %>% group_by(eye_color) %>% summarise(sum = n()) %>% arrange(desc(sum)) %>% head(1)
 ```
 
-### 10. Средняя длина имени для каждого вида
+    # A tibble: 1 × 2
+      eye_color   sum
+      <chr>     <int>
+    1 brown        21
 
-Добавим длину имени и посчитаем её среднее значение по видам:
+### 13. Подсчитать среднюю длину имени в каждой расе
 
-```{r}
-avg_name_length <- starwars %>%
-  mutate(name_length = nchar(name)) %>%
-  group_by(species) %>%
-  summarise(avg_length = mean(name_length, na.rm = TRUE)) %>%
-  arrange(desc(avg_length))
+Средняя длина имени:
 
-print(avg_name_length)
+``` r
+starwars %>% filter(!is.na(species)) %>% mutate(nlen = nchar(name)) %>% group_by(species) %>% summarise(mean(nlen))
 ```
 
----
+    # A tibble: 37 × 2
+       species   `mean(nlen)`
+       <chr>            <dbl>
+     1 Aleena           12   
+     2 Besalisk         15   
+     3 Cerean           12   
+     4 Chagrian         10   
+     5 Clawdite         10   
+     6 Droid             4.83
+     7 Dug               7   
+     8 Ewok             21   
+     9 Geonosian        17   
+    10 Gungan           11.7 
+    # ℹ 27 more rows
+
+## Оценка результатов
+
+Были развиты практические навыки использования функций обработки данных
+пакета dplyr на примере набора данных “starwars”. Выполнены расчёты,
+анализ и группировка данных.
 
 ## Вывод
 
-В процессе выполнения работы были выполнены следующие задачи:
-
-1. Изучена структура датасета `starwars`.
-2. Произведен анализ данных: отфильтрованы строки, рассчитаны новые показатели и выполнены группировки.
-3. Закреплены навыки работы с базовыми функциями пакета `dplyr`.
+Помимо базовых возможностей языка R для обработки данных, функции пакета
+dplyr позволяют эффективно работать с большими таблицами и выполнять
+сложные операции с минимальным количеством кода.
