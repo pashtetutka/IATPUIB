@@ -51,7 +51,6 @@
 Для подключения к бакету необходимо создать собственное соединение с данными. 
 
 - В интерфейсе Yandex Query выбираем создание нового подключения.
-- Заполняем поля с учетом допустимых символов. В качестве имени соединения используем фамилию (например, `chirkov_connection`).
 - Вводим название бакета `arrow-datasets` и выбираем тип аутентификации – публичный доступ.
 - Сохраняем настройки и проверяем успешность подключения.
 
@@ -101,7 +100,7 @@ WHERE src LIKE '12.%' OR src LIKE '13.%' OR src LIKE '14.%';
 Исходящий трафик рассчитывается как сумма значений в колонке `bytes` для всех исходящих соединений.
 
 ```sql
-SELECT SUM(bytes) AS total_outgoing_traffic
+SELECT SUM(bytes) AS total_outtraffic
 FROM mydataset
 WHERE src LIKE '12.%' OR src LIKE '13.%' OR src LIKE '14.%';
 ```
@@ -115,7 +114,7 @@ WHERE src LIKE '12.%' OR src LIKE '13.%' OR src LIKE '14.%';
 Входящий трафик рассчитывается аналогично, но с использованием колонки `dst`, представляющей получателей данных:
 
 ```sql
-SELECT SUM(bytes) AS total_incoming_traffic
+SELECT SUM(bytes) AS total_intraffic
 FROM mydataset
 WHERE dst LIKE '12.%' OR dst LIKE '13.%' OR dst LIKE '14.%';
 ```
