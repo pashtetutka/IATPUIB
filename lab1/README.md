@@ -1,8 +1,6 @@
 # Введение в R
 pashtet.2003@yandex.ru
 
-# Введение в R
-
 ## Цель работы
 
 1.  Развить практические навыки использования языка программирования R
@@ -31,7 +29,7 @@ install.packages("swirl")
     пакет 'swirl' успешно распакован, MD5-суммы проверены
 
     Скачанные бинарные пакеты находятся в
-        C:\Users\User\AppData\Local\Temp\RtmpKE4Prz\downloaded_packages
+        C:\Users\User\AppData\Local\Temp\RtmpkV82dG\downloaded_packages
 
 После установки библиотека была подключена для работы:
 
@@ -198,7 +196,7 @@ my_data <- sample(c(y, z), 100)
 sum(is.na(my_data))
 ```
 
-    [1] 48
+    [1] 50
 
 -   Изучение работы с бесконечностями:
 
