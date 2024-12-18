@@ -1,6 +1,3 @@
-```{r}
-chooseCRANmirror(graphics = FALSE, ind = 1)
-```
 ---
 title: "Работа с языком программирования R"
 author: "pashtet.2003@yandex.ru"
